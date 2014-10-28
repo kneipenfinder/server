@@ -1,6 +1,7 @@
 <?php
 
-	require_once('/var/www/core/database.php');
+	require_once('config.php');
+	require_once('./core/database.php');
 
 	class server{
 	
@@ -15,36 +16,13 @@
 		
 		public function run(){
 		
-		
-			
-			//
-
-			// $this->db->prepare("SELECT Location_ID,Longitude,Latitude FROM Location");
-			// $results = $this->db->fetchAssoc();
-			// $locations = array();
-			// if(!empty($results)){
-			
-				// foreach($results as $result){
-				
-					// $distance = $this->getDistance($result['Latitude'],$result['Longitude'],51.674967,6.941239);
-					// $locations[] = array('id' => $result['Location_ID'], 'lat' => $result['Latitude'], 'long' => $result['Longitude'], 'distance' => $distance);
-				
-				// }
-			
-			// }
-				
-			// print_r($locations);
-				
-			//
-	
-		
 			if(!isset($_POST['action'])) $this->error();
 			
 			switch($_POST['action']){
 			
 				case 'requestPG':
 					
-					$p = rand(281474976710656,1125899906842624); //zahl zwischen Unsigned INT 48Bit und 50Bit
+					$p = rand(1152921504606846976,4611686018427387904); //zahl zwischen Unsigned INT 60Bit und 62Bit
 					$p = gmp_nextprime($p);
 					
 					$g = 2;
@@ -109,7 +87,21 @@
 							
 							}else{
 							
-								$this->secureCom(json_encode(array('status' => true)), hash('sha256', $session[0]['Private_Key'], true));
+								$this->db->prepare("SELECT Name,Location_ID,Longitude,Latitude FROM Location");
+								$results = $this->db->fetchAssoc();
+								$locations = array();
+								if(!empty($results)){
+								
+									foreach($results as $result){
+									
+										$distance = $this->getDistance($result['Latitude'],$result['Longitude'],$payload['lat'],$payload['long']);
+										$locations[] = array('id' => $result['Location_ID'], 'name' => $result['Name'], 'lat' => $result['Latitude'], 'long' => $result['Longitude'], 'distance' => $distance);
+									
+									}
+								
+								}
+							
+								$this->secureCom(json_encode(array('status' => true, 'locations' => $locations)), hash('sha256', $session[0]['Private_Key'], true));
 							
 							}
 							break;
