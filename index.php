@@ -15,6 +15,29 @@
 		
 		public function run(){
 		
+		
+			
+			//
+
+			// $this->db->prepare("SELECT Location_ID,Longitude,Latitude FROM Location");
+			// $results = $this->db->fetchAssoc();
+			// $locations = array();
+			// if(!empty($results)){
+			
+				// foreach($results as $result){
+				
+					// $distance = $this->getDistance($result['Latitude'],$result['Longitude'],51.674967,6.941239);
+					// $locations[] = array('id' => $result['Location_ID'], 'lat' => $result['Latitude'], 'long' => $result['Longitude'], 'distance' => $distance);
+				
+				// }
+			
+			// }
+				
+			// print_r($locations);
+				
+			//
+	
+		
 			if(!isset($_POST['action'])) $this->error();
 			
 			switch($_POST['action']){
@@ -107,6 +130,17 @@
 					break;
 			
 			}
+		
+		}
+		
+		private function getDistance($lat1,$long1,$lat2,$long2){
+
+			$delta = $long1 - $long2;
+			$distance = sin(deg2rad($lat1)) * sin(deg2rad($lat2)) +  cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($delta));
+			$distance = acos($distance);
+			$distance = rad2deg($distance);
+			$distance = $distance * 60 * 1852;
+			return intval($distance);
 		
 		}
 		
