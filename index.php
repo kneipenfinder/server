@@ -7,6 +7,7 @@
 	
 		private $db;
 		private $hex_iv = '00000000000000000000000000000000';
+		private $limb_limiter = 8;
 	
 		public function __construct(){
 		
@@ -22,12 +23,18 @@
 			
 				case 'requestPG':
 					
-					$p = rand(1152921504606846976,4611686018427387904); //zahl zwischen Unsigned INT 60Bit und 62Bit
+					$p = gmp_random($this->limb_limiter);
 					$p = gmp_nextprime($p);
-					
 					$g = 2;
-					$secretRandom = rand(1,gmp_intval($p)-1);
 					
+					$secretRandom = $p;
+					while(gmp_cmp($secretRandom, $p) >= 0){
+					
+						// Endlosschleife theoretisch möglich, aber praktisch "unmöglich"
+						$secretRandom = gmp_random($this->limb_limiter);
+					
+					}
+
 					$sessionID = md5(uniqid());
 					
 					$publicKey = gmp_powm($g,$secretRandom,$p);
@@ -38,7 +45,7 @@
 						'Session_ID' => $sessionID,
 						'p' => gmp_strval($p),
 						'g' => $g,
-						'Secret_Random' => $secretRandom,
+						'Secret_Random' => gmp_strval($secretRandom),
 						'Server_Public_Key' => $publicKey				
 					));
 					
