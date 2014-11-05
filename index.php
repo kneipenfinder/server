@@ -17,6 +17,8 @@
 		
 		public function run(){
 		
+			// sleep(1);
+		
 			if(!isset($_POST['action'])) $this->error();
 			
 			switch($_POST['action']){
@@ -94,7 +96,7 @@
 							
 							}else{
 							
-								$this->db->prepare("SELECT Name,Location_ID,Longitude,Latitude FROM Location");
+								$this->db->prepare("SELECT Name,Location_ID,Longitude,Latitude,Strasse FROM Location");
 								$results = $this->db->fetchAssoc();
 								$locations = array();
 								if(!empty($results)){
@@ -102,7 +104,8 @@
 									foreach($results as $result){
 									
 										$distance = $this->getDistance($result['Latitude'],$result['Longitude'],$payload['lat'],$payload['long']);
-										$locations[] = array('id' => $result['Location_ID'], 'name' => $result['Name'], 'lat' => $result['Latitude'], 'long' => $result['Longitude'], 'distance' => $distance);
+										$orientation = $this->getOrientation($payload['lat'],$payload['long'],$result['Latitude'],$result['Longitude']);
+										$locations[] = array('id' => $result['Location_ID'], 'name' => $result['Name'], 'lat' => $result['Latitude'], 'long' => $result['Longitude'], 'street' => $result['Strasse'], 'distance' => $distance, 'orientation' => $orientation);
 									
 									}
 								
@@ -132,14 +135,44 @@
 		
 		}
 		
+		private function getOrientation($fromLat,$fromLong,$toLat,$toLong){
+			
+			$diffLong = $toLong-$fromLong;
+			$diffLat = $toLat-$fromLat;
+			$s =  atan2($diffLong, $diffLat) * 180 / pi();
+			$orientation = '';
+			if($s > -22.5 && $s <= 22.5){
+				$orientation = 'N';
+			}elseif($s > 22.5 && $s <= 72.5){
+				$orientation = 'NE';
+			}elseif($s > 72.5 && $s <= 122.5){
+				$orientation = 'E';
+			}elseif($s > 122.5 && $s <= 172.5){
+				$orientation = 'SE';
+			}elseif($s > 172.5 && $s <= 180){
+				$orientation = 'S';
+			}elseif($s >= -180 && $s <= -172.5){
+				$orientation = 'S';
+			}
+			elseif($s > -172.5 && $s <= -122.5){
+				$orientation = 'SW';
+			}elseif($s > -122.5 && $s <= -72.5){
+				$orientation = 'W';
+			}elseif($s > -72.5 && $s <= -22.5){
+				$orientation = 'NW';
+			}
+			return $orientation;
+		
+		}
+		
 		private function getDistance($lat1,$long1,$lat2,$long2){
 
 			$delta = $long1 - $long2;
 			$distance = sin(deg2rad($lat1)) * sin(deg2rad($lat2)) +  cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($delta));
 			$distance = acos($distance);
 			$distance = rad2deg($distance);
-			$distance = $distance * 60 * 1852;
-			return intval($distance);
+			$distance = round((($distance * 60 * 1852)/1000),1);
+			return $distance;
 		
 		}
 		
