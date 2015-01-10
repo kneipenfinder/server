@@ -1,10 +1,9 @@
 <?php
 
-	/* Zugangsdaten entfernt */
-	define('SQL_HOST', '');
-	define('SQL_DATABASE', '');
-	define('SQL_USER', '');
-	define('SQL_PASSWORD', '');
+	define('SQL_HOST', 'localhost');
+	define('SQL_DATABASE', 'lepema');
+	define('SQL_USER', 'root');
+	define('SQL_PASSWORD', 'LePeMa2014');
 	
 	define('TABLE_CITY', 'City');
 	define('TABLE_LOCATION', 'Location');

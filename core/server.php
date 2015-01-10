@@ -37,9 +37,10 @@
 					$publicKey = gmp_powm($g,$secretRandom,$p);
 					$publicKey = gmp_strval($publicKey);
 
-					$this->db->prepare("INSERT INTO Session (Session_ID,p,g,Secret_Random,Server_Public_Key) VALUES (:Session_ID,:p,:g,:Secret_Random,:Server_Public_Key)");
+					$this->db->prepare("INSERT INTO Session (Session_ID,Device_ID,p,g,Secret_Random,Server_Public_Key) VALUES (:Session_ID,:Device_ID,:p,:g,:Secret_Random,:Server_Public_Key)");
 					$this->db->bind(array(
 						'Session_ID' => $sessionID,
+						'Device_ID' => $_POST['deviceID'],
 						'p' => gmp_strval($p),
 						'g' => $g,
 						'Secret_Random' => gmp_strval($secretRandom),
@@ -72,7 +73,7 @@
 					
 				case 'secureCom':
 					
-					$this->db->prepare("SELECT Private_Key FROM Session WHERE Session_ID = :sessionID");
+					$this->db->prepare("SELECT Private_Key,Device_ID FROM Session WHERE Session_ID = :sessionID");
 					$this->db->bind(array('sessionID' => $_POST['sessionID']));
 					$session = $this->db->fetchAssoc();
 					if(empty($session)) error();
@@ -194,7 +195,16 @@
 							
 							}
 							
-							 break;
+							break;
+							 
+						case 'rateLocation':
+							
+							$locationID = $payload['LocationID'];
+							$rating = $payload['Rating'];
+							$comment = (empty($payload['Comment']))?null:$payload['Comment'];
+							$rateStatus = $this->rateLocation('android', $locationID, $session[0]['Device_ID'], $rating, $comment);
+							$this->secureCom(json_encode(array('status' => $rateStatus)), hash('sha256', $session[0]['Private_Key'], true));
+							break;
 					
 						default:
 				
@@ -241,6 +251,19 @@
 					break;
 			
 			}
+		
+		}
+		
+		private function rateLocation($type, $locationID, $deviceID, $stars, $comment = null){
+		
+			$this->db->prepare("SELECT Location_Rating_ID FROM ".TABLE_LOCATION_RATING." WHERE Type = :type AND Location_ID = Location_ID AND Device_ID = :Device_ID");
+			$this->db->bind(array('type' => $type, 'Location_ID' => $locationID, 'Device_ID' => $deviceID));
+			$check = $this->db->fetchAssoc();
+			if(!empty($check)) return false;
+		
+			$this->db->prepare("INSERT INTO ".TABLE_LOCATION_RATING." (Location_ID, Number_Of_Stars, Optional_Comment, Device_ID, Type) VALUES (:Location_ID, :Number_Of_Stars, :Optional_Comment, :Device_ID, :Type)");
+			$this->db->bind(array('Location_ID' => $locationID, 'Number_Of_Stars' => $stars, 'Optional_Comment' => $comment, 'Device_ID' => $deviceID, 'Type' => $type));
+			return $this->db->execute();	
 		
 		}
 		
